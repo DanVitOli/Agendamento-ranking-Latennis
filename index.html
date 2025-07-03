@@ -476,7 +476,8 @@
                 const slotTime = parseInt(time.replace(':', ''));
                 const startTime = parseInt(block.start.replace(':', ''));
                 const endTime = parseInt(block.end.replace(':', ''));
-                return slotTime >= startTime && slotTime <= endTime;
+                // Aulas NAL: 14:00 às 15:00 (14:00 bloqueado, 15:00 livre)
+                return slotTime >= startTime && slotTime < endTime;
             });
         }
         
