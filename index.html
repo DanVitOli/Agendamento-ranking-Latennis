@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Agendamento de Jogos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .controls input, .controls select, .controls button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .controls button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .controls button:hover {
+            background: #0056b3;
+        }
+        
+        .admin-btn {
+            background: #28a745;
+            margin-left: auto;
+        }
+        
+        .admin-btn:hover {
+            background: #1e7e34;
+        }
+        
+        .location-section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .location-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .header-cell {
+            background: #e9ecef;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        
+        .time-cell {
+            background: #dee2e6;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        
+        .slot-cell {
+            padding: 5px;
+            min-height: 60px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .slot-available {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .slot-available:hover {
+            background: #c3e6cb;
+            transform: translateY(-2px);
+        }
+        
+        .slot-booked {
+            background: #d1ecf1;
+            border-color: #b6d4da;
+            color: #0c5460;
+        }
+        
+        .slot-blocked {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-confirm {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+        
+        .btn-confirm:hover {
+            background: #0056b3;
+        }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .cancel-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+        
+        .cancel-btn:hover {
+            background: #c82333;
+        }
+        
+        .my-booking {
+            color: #28a745;
+            font-size: 10px;
+            margin-top: 3px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .schedule-grid {
+                grid-template-columns: 60px repeat(7, 1fr);
+                gap: 3px;
+            }
+            
+            .slot-cell {
+                min-height: 50px;
+                font-size: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎾 Sistema de Agendamento de Jogos</h1>
+        <p style="text-align: center; margin-bottom: 30px; color: #666;">
+            Visualize e marque seus horários nos dois locais
+        </p>
+        
+        <div class="controls">
+            <div>
+                <label for="date-picker">📅 Data:</label>
+                <input type="date" id="date-picker">
+            </div>
+            
+            <div>
+                <label for="location-filter">📍 Local:</label>
+                <select id="location-filter">
+                    <option value="all">Todos os locais</option>
+                    <option value="chacara">Chácara</option>
+                    <option value="aabb">AABB</option>
+                </select>
+            </div>
+            
+            <button id="refresh-btn">🔄 Atualizar</button>
+            
+            <button id="login-btn" class="admin-btn">🔒 Login Admin</button>
+            <button id="logout-btn" class="admin-btn" style="display: none;">🚪 Logout</button>
+        </div>
+        
+        <div class="status">
+            <div class="status-item">
+                <div class="status-dot" style="background: #28a745;"></div>
+                <span>Disponível</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" style="background: #007bff;"></div>
+                <span>Reservado</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" style="background: #dc3545;"></div>
+                <span>Bloqueado</span>
+            </div>
+        </div>
+        
+        <div id="schedule-container">
+            <div class="loading">Carregando horários...</div>
+        </div>
+    </div>
+
+    <!-- Modal de Login -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h3>🔒 Login do Administrador</h3>
+            <div class="form-group">
+                <label for="password-input">Senha:</label>
+                <input type="password" id="password-input" placeholder="Digite a senha">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeLoginModal()">Cancelar</button>
+                <button class="btn-confirm" onclick="confirmLogin()">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Reserva -->
+    <div id="booking-modal" class="modal">
+        <div class="modal-content">
+            <h3>🎾 Fazer Reserva</h3>
+            <div id="booking-info" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <p><strong>Local:</strong> <span id="booking-location"></span></p>
+                <p><strong>Data:</strong> <span id="booking-date"></span></p>
+                <p><strong>Horário:</strong> <span id="booking-time"></span></p>
+            </div>
+            
+            <div class="form-group">
+                <label for="player1-input">Jogador 1: *</label>
+                <input type="text" id="player1-input" placeholder="Nome do primeiro jogador">
+            </div>
+            
+            <div class="form-group">
+                <label for="player2-input">Jogador 2: (opcional)</label>
+                <input type="text" id="player2-input" placeholder="Nome do segundo jogador">
+            </div>
+            
+            <div class="form-group">
+                <label for="class-select">Classe do Ranking:</label>
+                <select id="class-select">
+                    <option value="">Selecione a classe</option>
+                    <option value="3ª classe">3ª classe</option>
+                    <option value="4ª classe">4ª classe</option>
+                    <option value="5ª classe">5ª classe</option>
+                    <option value="Feminino">Feminino</option>
+                </select>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeBookingModal()">Cancelar</button>
+                <button class="btn-confirm" onclick="confirmBooking()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração
+        const ADMIN_PASSWORD = 'admin123';
+        let isAdmin = false;
+        let currentUser = null;
+        let bookings = {};
+        let selectedSlot = null;
+        
+        // Horários
+        const schedules = {
+            chacara: {
+                monday: ['07:00', '08:30', '10:00', '11:30', '13:00'],
+                tuesday: ['07:00', '08:30', '10:00', '11:30', '13:00'],
+                wednesday: ['07:00', '08:30', '10:00', '11:30'],
+                thursday: ['07:00', '08:30', '10:00', '11:30', '13:00'],
+                friday: ['07:00', '08:30', '10:00', '11:30', '13:00'],
+                saturday: ['07:00', '08:30', '10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00', '20:30'],
+                sunday: ['07:00', '08:30', '10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00', '20:30']
+            },
+            aabb: {
+                monday: [],
+                tuesday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30'],
+                wednesday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '19:30', '20:00', '21:30'],
+                thursday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30'],
+                friday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '19:30', '20:00', '21:30'],
+                saturday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30', '21:00'],
+                sunday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30', '21:00']
+            }
+        };
+        
+        const blockedSlots = {
+            chacara: {
+                wednesday: [{ start: '14:00', end: '15:00', reason: 'Aulas NAL' }],
+                monday: [{ start: '18:00', end: '23:59', reason: 'Grupo chácara' }],
+                tuesday: [{ start: '18:00', end: '23:59', reason: 'Família proprietário' }],
+                wednesday: [{ start: '18:00', end: '23:59', reason: 'Grupo chácara' }],
+                thursday: [{ start: '18:00', end: '23:59', reason: 'Família proprietário' }],
+                friday: [{ start: '18:00', end: '23:59', reason: 'Jogos ranking' }]
+            },
+            aabb: {
+                tuesday: [
+                    { start: '15:00', end: '18:00', reason: 'Aulas Manelão' },
+                    { start: '18:00', end: '23:00', reason: 'Racha' }
+                ],
+                wednesday: [{ start: '17:00', end: '18:00', reason: 'Aulas Manelão' }],
+                thursday: [
+                    { start: '15:00', end: '18:00', reason: 'Aulas Manelão' },
+                    { start: '18:00', end: '23:00', reason: 'Racha' }
+                ],
+                friday: [{ start: '17:00', end: '18:00', reason: 'Aulas Manelão' }]
+            }
+        };
+        
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const daysPt = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        
+        // Funções auxiliares
+        function formatDate(date) {
+            return date.toLocaleDateString('pt-BR');
+        }
+        
+        function generateUserId() {
+            return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function getUserId() {
+            let userId = localStorage.getItem('tennis_user_id');
+            if (!userId) {
+                userId = generateUserId();
+                localStorage.setItem('tennis_user_id', userId);
+            }
+            return userId;
+        }
+        
+        function saveBookings() {
+            localStorage.setItem('tennis_bookings', JSON.stringify(bookings));
+        }
+        
+        function loadBookings() {
+            const saved = localStorage.getItem('tennis_bookings');
+            bookings = saved ? JSON.parse(saved) : {};
+        }
+        
+        function isSlotBlocked(location, day, time) {
+            const blocked = blockedSlots[location]?.[day] || [];
+            return blocked.some(block => {
+                const slotTime = parseInt(time.replace(':', ''));
+                const startTime = parseInt(block.start.replace(':', ''));
+                const endTime = parseInt(block.end.replace(':', ''));
+                return slotTime >= startTime && slotTime <= endTime;
+            });
+        }
+        
+        function getBlockedReason(location, day, time) {
+            const blocked = blockedSlots[location]?.[day] || [];
+            const blockedSlot = blocked.find(block => {
+                const slotTime = parseInt(time.replace(':', ''));
+                const startTime = parseInt(block.start.replace(':', ''));
+                const endTime = parseInt(block.end.replace(':', ''));
+                return slotTime >= startTime && slotTime <= endTime;
+            });
+            return blockedSlot?.reason || '';
+        }
+        
+        function getWeekDates(selectedDate) {
+            const week = [];
+            const startOfWeek = new Date(selectedDate);
+            startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(startOfWeek);
+                date.setDate(startOfWeek.getDate() + i);
+                week.push(date);
+            }
+            return week;
+        }
+        
+        function renderSchedule() {
+            const selectedDate = new Date(document.getElementById('date-picker').value);
+            const selectedLocation = document.getElementById('location-filter').value;
+            const weekDates = getWeekDates(selectedDate);
+            const container = document.getElementById('schedule-container');
+            
+            const locations = [
+                { key: 'chacara', name: 'Chácara', icon: '🟫' },
+                { key: 'aabb', name: 'AABB', icon: '🟩' }
+            ];
+            
+            let html = '';
+            
+            locations.forEach(location => {
+                if (selectedLocation !== 'all' && selectedLocation !== location.key) return;
+                
+                html += `
+                    <div class="location-section">
+                        <div class="location-title">${location.icon} ${location.name}</div>
+                        <div class="schedule-grid">
+                            <div class="header-cell">Horário</div>
+                `;
+                
+                // Cabeçalho dos dias
+                weekDates.forEach((date, index) => {
+                    html += `
+                        <div class="header-cell">
+                            ${daysPt[date.getDay()]}<br>
+                            <small>${date.getDate()}</small>
+                        </div>
+                    `;
+                });
+                
+                // Obter todos os horários
+                const allTimes = new Set();
+                Object.values(schedules[location.key]).forEach(times => {
+                    times.forEach(time => allTimes.add(time));
+                });
+                const sortedTimes = Array.from(allTimes).sort();
+                
+                // Renderizar horários
+                sortedTimes.forEach(time => {
+                    html += `<div class="time-cell">⏰<br>${time}</div>`;
+                    
+                    weekDates.forEach((date, dayIndex) => {
+                        const dayName = days[date.getDay()];
+                        const daySchedule = schedules[location.key][dayName] || [];
+                        
+                        if (!daySchedule.includes(time)) {
+                            html += `<div></div>`;
+                            return;
+                        }
+                        
+                        const dateKey = formatDate(date);
+                        const bookingId = `${location.key}-${dateKey}-${time}`;
+                        const booking = bookings[bookingId];
+                        
+                        let status = 'available';
+                        let content = '✅<br>Disponível';
+                        let clickHandler = `onclick="openBookingModal('${location.key}', '${dayName}', '${time}', '${date.toISOString()}')"`;
+                        
+                        if (isSlotBlocked(location.key, dayName, time)) {
+                            status = 'blocked';
+                            content = `⚠️<br><small>${getBlockedReason(location.key, dayName, time)}</small>`;
+                            clickHandler = '';
+                        } else if (booking) {
+                            status = 'booked';
+                            const canCancel = isAdmin || booking.createdBy === currentUser;
+                            content = `
+                                👥<br>
+                                <strong>${booking.game}</strong><br>
+                                ${booking.class ? `<small>${booking.class}</small><br>` : ''}
+                                ${canCancel ? `<button class="cancel-btn" onclick="cancelBooking('${bookingId}')">Cancelar</button>` : ''}
+                                ${booking.createdBy === currentUser ? '<div class="my-booking">• Sua reserva</div>' : ''}
+                            `;
+                            clickHandler = '';
+                        }
+                        
+                        html += `
+                            <div class="slot-cell slot-${status}" ${clickHandler}>
+                                ${content}
+                            </div>
+                        `;
+                    });
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function openBookingModal(location, day, time, dateString) {
+            const date = new Date(dateString);
+            selectedSlot = { location, day, time, date };
+            
+            document.getElementById('booking-location').textContent = location === 'chacara' ? 'Chácara' : 'AABB';
+            document.getElementById('booking-date').textContent = formatDate(date);
+            document.getElementById('booking-time').textContent = time;
+            
+            document.getElementById('booking-modal').style.display = 'block';
+        }
+        
+        function closeBookingModal() {
+            document.getElementById('booking-modal').style.display = 'none';
+            document.getElementById('player1-input').value = '';
+            document.getElementById('player2-input').value = '';
+            document.getElementById('class-select').value = '';
+        }
+        
+        function confirmBooking() {
+            const player1 = document.getElementById('player1-input').value.trim();
+            if (!player1) {
+                alert('Por favor, insira o nome do primeiro jogador!');
+                return;
+            }
+            
+            const player2 = document.getElementById('player2-input').value.trim();
+            const rankingClass = document.getElementById('class-select').value;
+            
+            const dateKey = formatDate(selectedSlot.date);
+            const bookingId = `${selectedSlot.location}-${dateKey}-${selectedSlot.time}`;
+            
+            const game = player2 ? `${player1} x ${player2}` : player1;
+            
+            bookings[bookingId] = {
+                game,
+                class: rankingClass,
+                date: dateKey,
+                time: selectedSlot.time,
+                location: selectedSlot.location,
+                createdBy: currentUser,
+                createdAt: new Date().toISOString()
+            };
+            
+            saveBookings();
+            closeBookingModal();
+            renderSchedule();
+        }
+        
+        function cancelBooking(bookingId) {
+            const booking = bookings[bookingId];
+            if (!isAdmin && booking.createdBy !== currentUser) {
+                alert('Você só pode cancelar suas próprias reservas!');
+                return;
+            }
+            
+            if (confirm('Tem certeza que deseja cancelar esta reserva?')) {
+                delete bookings[bookingId];
+                saveBookings();
+                renderSchedule();
+            }
+        }
+        
+        function openLoginModal() {
+            document.getElementById('login-modal').style.display = 'block';
+        }
+        
+        function closeLoginModal() {
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('password-input').value = '';
+        }
+        
+        function confirmLogin() {
+            const password = document.getElementById('password-input').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdmin = true;
+                localStorage.setItem('tennis_admin', 'true');
+                updateLoginButton();
+                closeLoginModal();
+                renderSchedule();
+            } else {
+                alert('Senha incorreta!');
+            }
+        }
+        
+        function logout() {
+            isAdmin = false;
+            localStorage.setItem('tennis_admin', 'false');
+            updateLoginButton();
+            renderSchedule();
+        }
+        
+        function updateLoginButton() {
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (isAdmin) {
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+                logoutBtn.textContent = '🛡️ Admin - Logout';
+            } else {
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+            }
+        }
+        
+        // Inicialização
+        function init() {
+            console.log('Inicializando sistema...');
+            
+            // Obter usuário
+            currentUser = getUserId();
+            console.log('Usuário:', currentUser);
+            
+            // Verificar admin
+            isAdmin = localStorage.getItem('tennis_admin') === 'true';
+            updateLoginButton();
+            
+            // Carregar dados
+            loadBookings();
+            console.log('Reservas carregadas:', bookings);
+            
+            // Configurar data
+            const today = new Date();
+            document.getElementById('date-picker').value = today.toISOString().split('T')[0];
+            
+            // Event listeners
+            document.getElementById('date-picker').addEventListener('change', renderSchedule);
+            document.getElementById('location-filter').addEventListener('change', renderSchedule);
+            document.getElementById('refresh-btn').addEventListener('click', () => {
+                loadBookings();
+                renderSchedule();
+            });
+            document.getElementById('login-btn').addEventListener('click', openLoginModal);
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            
+            // Enter no password
+            document.getElementById('password-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') confirmLogin();
+            });
+            
+            // Renderizar
+            renderSchedule();
+            console.log('Sistema inicializado!');
+        }
+        
+        // Aguardar DOM carregar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
