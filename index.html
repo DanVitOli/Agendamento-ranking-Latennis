@@ -409,9 +409,9 @@
             aabb: {
                 monday: [],
                 tuesday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
-                wednesday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '17:00', '19:30', '20:00', '21:30'],
+                wednesday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '17:00', '18:00', '19:30', '20:00', '21:30'],
                 thursday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
-                friday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '17:00', '19:30', '20:00', '21:30'],
+                friday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '17:00', '18:00', '19:30', '20:00', '21:30'],
                 saturday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30', '21:00'],
                 sunday: ['06:00', '07:30', '09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00', '19:30', '21:00']
             }
@@ -443,7 +443,14 @@
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const daysPt = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         
-        // Funções auxiliares
+        // Função para testar bloqueios
+        function testBlockedSlots() {
+            console.log('Testando bloqueio das 14:00 chácara quarta:');
+            console.log('Blocked slots chácara:', blockedSlots.chacara);
+            console.log('Wednesday blocks:', blockedSlots.chacara.wednesday);
+            console.log('Is 14:00 blocked?', isSlotBlocked('chacara', 'wednesday', '14:00'));
+            console.log('Blocked reason:', getBlockedReason('chacara', 'wednesday', '14:00'));
+        }
         function formatDate(date) {
             return date.toLocaleDateString('pt-BR');
         }
@@ -472,23 +479,48 @@
         
         function isSlotBlocked(location, day, time) {
             const blocked = blockedSlots[location]?.[day] || [];
+            
             return blocked.some(block => {
-                const slotTime = parseInt(time.replace(':', ''));
-                const startTime = parseInt(block.start.replace(':', ''));
-                const endTime = parseInt(block.end.replace(':', ''));
-                // Aulas NAL: 14:00 às 15:00 (14:00 bloqueado, 15:00 livre)
-                return slotTime >= startTime && slotTime < endTime;
+                const slotTime = time; // Manter como string para comparação mais precisa
+                const startTime = block.start;
+                const endTime = block.end;
+                
+                // Converter para minutos desde meia-noite para comparação precisa
+                const timeToMinutes = (timeStr) => {
+                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    return hours * 60 + minutes;
+                };
+                
+                const slotMinutes = timeToMinutes(slotTime);
+                const startMinutes = timeToMinutes(startTime);
+                const endMinutes = timeToMinutes(endTime);
+                
+                // Bloquear horário se estiver no intervalo (inclusive início, exclusive fim)
+                return slotMinutes >= startMinutes && slotMinutes < endMinutes;
             });
         }
         
         function getBlockedReason(location, day, time) {
             const blocked = blockedSlots[location]?.[day] || [];
+            
             const blockedSlot = blocked.find(block => {
-                const slotTime = parseInt(time.replace(':', ''));
-                const startTime = parseInt(block.start.replace(':', ''));
-                const endTime = parseInt(block.end.replace(':', ''));
-                return slotTime >= startTime && slotTime <= endTime;
+                const slotTime = time; // Manter como string
+                const startTime = block.start;
+                const endTime = block.end;
+                
+                // Converter para minutos desde meia-noite para comparação precisa
+                const timeToMinutes = (timeStr) => {
+                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    return hours * 60 + minutes;
+                };
+                
+                const slotMinutes = timeToMinutes(slotTime);
+                const startMinutes = timeToMinutes(startTime);
+                const endMinutes = timeToMinutes(endTime);
+                
+                return slotMinutes >= startMinutes && slotMinutes < endMinutes;
             });
+            
             return blockedSlot?.reason || '';
         }
         
@@ -707,11 +739,8 @@
         
         // Inicialização
         function init() {
-            console.log('Inicializando sistema...');
-            
             // Obter usuário
             currentUser = getUserId();
-            console.log('Usuário:', currentUser);
             
             // Verificar admin
             isAdmin = localStorage.getItem('tennis_admin') === 'true';
@@ -719,7 +748,6 @@
             
             // Carregar dados
             loadBookings();
-            console.log('Reservas carregadas:', bookings);
             
             // Configurar data
             const today = new Date();
@@ -742,7 +770,6 @@
             
             // Renderizar
             renderSchedule();
-            console.log('Sistema inicializado!');
         }
         
         // Aguardar DOM carregar
